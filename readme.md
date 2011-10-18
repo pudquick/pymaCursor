@@ -1,6 +1,6 @@
 #pymaCursor - mouse / cursor control in OS X using the built-in python 
 
-pymaCursor is a single-file python library that can be used with the built-in python on OS X to control the cursor (clicking, dragging, movement, etc.). This is performed without need for additional helper applications through the use of pyObjC.
+pymaCursor is a single-file python library that can be used with the built-in python on OS X to control the cursor (clicking, movement, etc.). This is performed without need for additional helper applications through the use of pyObjC.
 
 ##Credits
 
