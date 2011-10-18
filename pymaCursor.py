@@ -1,6 +1,9 @@
 import objc, time, os
-from Quartz.CoreGraphics import *
-from AppKit import NSEvent
+import Quartz.CoreGraphics as qCG
+from Quartz.CoreGraphics import CGEventPost,CGEventSetFlags, \
+	CGEventSetIntegerValueField,CGPointMake,CGEventCreate, \
+	CGEventGetLocation,CGEventCreateMouseEvent
+from AppKit import NSEvent, NSScreen, NSPointInRect
 
 def getMouseLoc():
 	mouseEvent = CGEventCreate(objc.NULL)
@@ -14,57 +17,67 @@ def mouseEvent(eventVal, mouseLocation = False):
 	return CGEventCreateMouseEvent(objc.NULL, eventVal, mouseLocation, 0)
 
 def doEvent(eventObj):
-	CGEventPost(kCGHIDEventTap, eventObj)
+	CGEventPost(qCG.kCGHIDEventTap, eventObj)
+
+# mouse clicks
 
 def performLeftClick(modKeys = 0):
 	mLoc = getMouseLoc()
-	clickMouse = mouseEvent(kCGEventLeftMouseDown, mLoc)
+	clickMouse = mouseEvent(qCG.kCGEventLeftMouseDown, mLoc)
 	if (modKeys != 0):
 		CGEventSetFlags(clickMouse, modKeys)
 	doEvent(clickMouse)
-	doEvent(mouseEvent(kCGEventLeftMouseUp, mLoc))
+	doEvent(mouseEvent(qCG.kCGEventLeftMouseUp, mLoc))
 	return True
 
 def performRightClick():
 	mLoc = getMouseLoc()
-	doEvent(mouseEvent(kCGEventRightMouseDown, mLoc))
+	doEvent(mouseEvent(qCG.kCGEventRightMouseDown, mLoc))
 	# eventually add in modifiers
-	doEvent(mouseEvent(kCGEventRightMouseUp, mLoc))
+	doEvent(mouseEvent(qCG.kCGEventRightMouseUp, mLoc))
 	return True
 
 def performDoubleLeftClick():
 	mLoc = getMouseLoc()
 	# left click once to bring to foreground
-	clickMouse = mouseEvent(kCGEventLeftMouseDown, mLoc)
-	CGEventSetIntegerValueField(clickMouse, kCGMouseEventClickState, 1)
+	clickMouse = mouseEvent(qCG.kCGEventLeftMouseDown, mLoc)
+	CGEventSetIntegerValueField(clickMouse, qCG.kCGMouseEventClickState, 1)
 	doEvent(clickMouse)
-	releaseMouse = mouseEvent(kCGEventLeftMouseUp, mLoc)
-	CGEventSetIntegerValueField(releaseMouse, kCGMouseEventClickState, 1)
+	releaseMouse = mouseEvent(qCG.kCGEventLeftMouseUp, mLoc)
+	CGEventSetIntegerValueField(releaseMouse, qCG.kCGMouseEventClickState, 1)
 	doEvent(releaseMouse)
 	# perform actual double click
-	clickMouse2 = mouseEvent(kCGEventLeftMouseDown, mLoc)
-	CGEventSetIntegerValueField(clickMouse2, kCGMouseEventClickState, 2)
+	clickMouse2 = mouseEvent(qCG.kCGEventLeftMouseDown, mLoc)
+	CGEventSetIntegerValueField(clickMouse2, qCG.kCGMouseEventClickState, 2)
 	doEvent(clickMouse2)
-	releaseMouse2 = mouseEvent(kCGEventLeftMouseUp, mLoc)
-	CGEventSetIntegerValueField(releaseMouse2, kCGMouseEventClickState, 1)
+	releaseMouse2 = mouseEvent(qCG.kCGEventLeftMouseUp, mLoc)
+	CGEventSetIntegerValueField(releaseMouse2, qCG.kCGMouseEventClickState, 1)
 	doEvent(releaseMouse2)
 	return True
 
 def getModKeysValue(doShiftDown = False, doCommandDown = False, doOptionDown = False, doControlDown = False):
 	modKeys = 0
 	if (doShiftDown):
-		modKeys |= kCGEventFlagMaskShift
+		modKeys |= qCG.kCGEventFlagMaskShift
 	if (doCommandDown):
-		modKeys |= kCGEventFlagMaskCommand
+		modKeys |= qCG.kCGEventFlagMaskCommand
 	if (doOptionDown):
-		modKeys |= kCGEventFlagMaskAlternate
+		modKeys |= qCG.kCGEventFlagMaskAlternate
 	if (doControlDown):
-		modKeys |= kCGEventFlagMaskControl
+		modKeys |= qCG.kCGEventFlagMaskControl
 	return modKeys
+
+def allModifiersUp():
+	try:
+		os.system('/usr/bin/osascript -e "tell application \\"System Events\\" to key up {shift, command, option, control}"')
+	finally:
+		return True
+
+# move mouse
 
 def moveMouseToPoint(x, y):
 	xFloat,yFloat = (0. + x), (0. + y)
-	doEvent(mouseEvent(kCGEventMouseMoved, mouseLocation=CGPointMake(xFloat, yFloat)))
+	doEvent(mouseEvent(qCG.kCGEventMouseMoved, mouseLocation=CGPointMake(xFloat, yFloat)))
 	return True
 
 def stepMouseToPoint(x, y, numSteps=1):
@@ -90,9 +103,17 @@ def mouseLocation(isTopCoordinates = True):
 		mLoc = NSEvent.mouseLocation()
 		return "%.0f\n%.0f" % (mLoc.x,mLoc.y)
 
-def allModifiersUp():
-	try:
-		os.system('/usr/bin/osascript -e "tell application \\"System Events\\" to key up {shift, command, option, control}"')
-	except:
-		return True
-	return True
+# helpers
+
+def isPointOnAScreen(point):
+	screens = NSScreen.screens()
+	count = screens.count()
+	for i in range(count):
+		if (NSPointInRect(point, screens[i].frame())):
+			return (True, screens[i])
+	return (False, None)
+
+# TODO:
+# Work in flipping coordinates if requested between topleft and bottomleft
+# Make use of isPointOnAScreen to verify the point is valid before moving there
+# Can also pull details about the various screens and sizes that way
