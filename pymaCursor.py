@@ -5,6 +5,9 @@ from Quartz.CoreGraphics import CGEventPost,CGEventSetFlags, \
 	CGEventGetLocation,CGEventCreateMouseEvent
 from AppKit import NSEvent, NSScreen, NSPointInRect
 
+global sourceRef
+sourceRef = qCG.CGEventSourceCreate(qCG.kCGEventSourceStateHIDSystemState)
+
 def getMouseLoc():
 	mouseEvent = CGEventCreate(objc.NULL)
 	mouseLoc = CGEventGetLocation(mouseEvent)
@@ -12,9 +15,11 @@ def getMouseLoc():
 	return mouseLoc
 
 def mouseEvent(eventVal, mouseLocation = False):
+	global sourceRef
 	if (mouseLocation == False):
 		mouseLocation = getMouseLoc()
-	return CGEventCreateMouseEvent(objc.NULL, eventVal, mouseLocation, 0)
+	# return CGEventCreateMouseEvent(objc.NULL, eventVal, mouseLocation, 0)
+	return CGEventCreateMouseEvent(sourceRef, eventVal, mouseLocation, 0)
 
 def doEvent(eventObj):
 	CGEventPost(qCG.kCGHIDEventTap, eventObj)
