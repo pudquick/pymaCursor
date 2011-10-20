@@ -1,6 +1,6 @@
 import time, os
 from objc import NULL
-from Quartz.CoreGraphics import CGEventCreate, CGEventCreateMouseEvent,
+from Quartz.CoreGraphics import CGEventCreate, CGEventCreateMouseEvent, \
 	CGEventGetLocation, CGEventPost, CGEventSetFlags, CGEventSetIntegerValueField,   \
 	CGEventSourceCreate, CGPointMake, kCGEventFlagMaskAlternate,                     \
 	kCGEventFlagMaskCommand, kCGEventFlagMaskControl, kCGEventFlagMaskShift,         \
