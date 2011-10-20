@@ -1,75 +1,77 @@
-import objc, time, os
-import Quartz.CoreGraphics as qCG
-from Quartz.CoreGraphics import CGEventPost,CGEventSetFlags, \
-	CGEventSetIntegerValueField,CGPointMake,CGEventCreate, \
-	CGEventGetLocation,CGEventCreateMouseEvent
+import time, os
+from objc import NULL
+from Quartz.CoreGraphics import CGEventCreate, CGEventCreateMouseEvent,
+	CGEventGetLocation, CGEventPost, CGEventSetFlags, CGEventSetIntegerValueField,   \
+	CGEventSourceCreate, CGPointMake, kCGEventFlagMaskAlternate,                     \
+	kCGEventFlagMaskCommand, kCGEventFlagMaskControl, kCGEventFlagMaskShift,         \
+	kCGEventLeftMouseDown, kCGEventLeftMouseUp, kCGEventMouseMoved,                  \
+	kCGEventRightMouseDown, kCGEventRightMouseUp, kCGEventSourceStateHIDSystemState, \
+	kCGHIDEventTap, kCGMouseEventClickState
 from AppKit import NSEvent, NSScreen, NSPointInRect
 
-global sourceRef
-sourceRef = qCG.CGEventSourceCreate(qCG.kCGEventSourceStateHIDSystemState)
+PYMAC_SOURCE_REF = CGEventSourceCreate(kCGEventSourceStateHIDSystemState)
 
 def getMouseLoc():
-	mouseEvent = CGEventCreate(objc.NULL)
+	mouseEvent = CGEventCreate(NULL)
 	mouseLoc = CGEventGetLocation(mouseEvent)
 	# print mouseLoc
 	return mouseLoc
 
 def mouseEvent(eventVal, mouseLocation = False):
-	global sourceRef
 	if (mouseLocation == False):
 		mouseLocation = getMouseLoc()
-	# return CGEventCreateMouseEvent(objc.NULL, eventVal, mouseLocation, 0)
-	return CGEventCreateMouseEvent(sourceRef, eventVal, mouseLocation, 0)
+	# return CGEventCreateMouseEvent(NULL, eventVal, mouseLocation, 0)
+	return CGEventCreateMouseEvent(PYMAC_SOURCE_REF, eventVal, mouseLocation, 0)
 
 def doEvent(eventObj):
-	CGEventPost(qCG.kCGHIDEventTap, eventObj)
+	CGEventPost(kCGHIDEventTap, eventObj)
 
 # mouse clicks
 
 def performLeftClick(modKeys = 0):
 	mLoc = getMouseLoc()
-	clickMouse = mouseEvent(qCG.kCGEventLeftMouseDown, mLoc)
+	clickMouse = mouseEvent(kCGEventLeftMouseDown, mLoc)
 	if (modKeys != 0):
 		CGEventSetFlags(clickMouse, modKeys)
 	doEvent(clickMouse)
-	doEvent(mouseEvent(qCG.kCGEventLeftMouseUp, mLoc))
+	doEvent(mouseEvent(kCGEventLeftMouseUp, mLoc))
 	return True
 
 def performRightClick():
 	mLoc = getMouseLoc()
-	doEvent(mouseEvent(qCG.kCGEventRightMouseDown, mLoc))
+	doEvent(mouseEvent(kCGEventRightMouseDown, mLoc))
 	# eventually add in modifiers
-	doEvent(mouseEvent(qCG.kCGEventRightMouseUp, mLoc))
+	doEvent(mouseEvent(kCGEventRightMouseUp, mLoc))
 	return True
 
 def performDoubleLeftClick():
 	mLoc = getMouseLoc()
 	# left click once to bring to foreground
-	clickMouse = mouseEvent(qCG.kCGEventLeftMouseDown, mLoc)
-	CGEventSetIntegerValueField(clickMouse, qCG.kCGMouseEventClickState, 1)
+	clickMouse = mouseEvent(kCGEventLeftMouseDown, mLoc)
+	CGEventSetIntegerValueField(clickMouse, kCGMouseEventClickState, 1)
 	doEvent(clickMouse)
-	releaseMouse = mouseEvent(qCG.kCGEventLeftMouseUp, mLoc)
-	CGEventSetIntegerValueField(releaseMouse, qCG.kCGMouseEventClickState, 1)
+	releaseMouse = mouseEvent(kCGEventLeftMouseUp, mLoc)
+	CGEventSetIntegerValueField(releaseMouse, kCGMouseEventClickState, 1)
 	doEvent(releaseMouse)
 	# perform actual double click
-	clickMouse2 = mouseEvent(qCG.kCGEventLeftMouseDown, mLoc)
-	CGEventSetIntegerValueField(clickMouse2, qCG.kCGMouseEventClickState, 2)
+	clickMouse2 = mouseEvent(kCGEventLeftMouseDown, mLoc)
+	CGEventSetIntegerValueField(clickMouse2, kCGMouseEventClickState, 2)
 	doEvent(clickMouse2)
-	releaseMouse2 = mouseEvent(qCG.kCGEventLeftMouseUp, mLoc)
-	CGEventSetIntegerValueField(releaseMouse2, qCG.kCGMouseEventClickState, 1)
+	releaseMouse2 = mouseEvent(kCGEventLeftMouseUp, mLoc)
+	CGEventSetIntegerValueField(releaseMouse2, kCGMouseEventClickState, 1)
 	doEvent(releaseMouse2)
 	return True
 
 def getModKeysValue(doShiftDown = False, doCommandDown = False, doOptionDown = False, doControlDown = False):
 	modKeys = 0
 	if (doShiftDown):
-		modKeys |= qCG.kCGEventFlagMaskShift
+		modKeys |= kCGEventFlagMaskShift
 	if (doCommandDown):
-		modKeys |= qCG.kCGEventFlagMaskCommand
+		modKeys |= kCGEventFlagMaskCommand
 	if (doOptionDown):
-		modKeys |= qCG.kCGEventFlagMaskAlternate
+		modKeys |= kCGEventFlagMaskAlternate
 	if (doControlDown):
-		modKeys |= qCG.kCGEventFlagMaskControl
+		modKeys |= kCGEventFlagMaskControl
 	return modKeys
 
 def allModifiersUp():
@@ -82,7 +84,7 @@ def allModifiersUp():
 
 def moveMouseToPoint(x, y):
 	xFloat,yFloat = (0. + x), (0. + y)
-	doEvent(mouseEvent(qCG.kCGEventMouseMoved, mouseLocation=CGPointMake(xFloat, yFloat)))
+	doEvent(mouseEvent(kCGEventMouseMoved, mouseLocation=CGPointMake(xFloat, yFloat)))
 	return True
 
 def stepMouseToPoint(x, y, numSteps=1):
@@ -117,4 +119,3 @@ def isPointOnAScreen(point):
 		if (NSPointInRect(point, screens[i].frame())):
 			return (True, screens[i])
 	return (False, None)
-
